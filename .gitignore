@@ -1,3 +1,4 @@
+./vscode
 /omp/matMult
 /mpi/matMult
 /cuda/matMult
