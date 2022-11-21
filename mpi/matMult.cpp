@@ -143,6 +143,7 @@ int main(int argc, char *argv[])
     free(Mat2);
     free(MatResult);
 
+    //Finalize MPI
     MPI_Finalize();
 
     return 0;
