@@ -52,6 +52,7 @@ void mult(int *Mat1, int *Mat2, int *MatResult, int size)
                 result += Mat1[(y * size) + j] * Mat2[(j * size) + x];
             }
 
+            // Write result in matrix
             MatResult[i] = result;
         }
     }

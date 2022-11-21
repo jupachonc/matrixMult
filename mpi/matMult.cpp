@@ -43,10 +43,13 @@ void mult(int *Mat1, int *Mat2, int *MatResult, int size)
     // Calculate end iteration
     int end = ((processId + 1) * partition) < (size * size) ? ((processId + 1) * partition) : size * size;
 
+    // Calculate size of process array
     int sizeArray = end - start;
 
+    // Allocate memory for process matrix
     int *rpMatrix = (int *)malloc(sizeArray * sizeof(int));
 
+    // Counter for write process matrix
     int iA = 0;
 
     // Multiplication
@@ -63,6 +66,7 @@ void mult(int *Mat1, int *Mat2, int *MatResult, int size)
             result += Mat1[(y * size) + j] * Mat2[(j * size) + x];
         }
 
+        // Write result in matrix
         rpMatrix[iA++] = result;
     }
 
