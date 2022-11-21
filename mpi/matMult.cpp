@@ -68,6 +68,7 @@ void mult(int *Mat1, int *Mat2, int *MatResult, int size)
 
     MPI_Barrier(MPI_COMM_WORLD); /* IMPORTANT */
     MPI_Gather(rpMatrix, sizeArray, MPI_INT, MatResult, sizeArray, MPI_INT, 0, MPI_COMM_WORLD);
+    free(rpMatrix);
 }
 
 // Print formated matrix
