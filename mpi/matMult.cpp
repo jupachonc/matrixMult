@@ -118,11 +118,12 @@ int main(int argc, char *argv[])
 
     // Multiplication
     mult(Mat1, Mat2, MatResult, size);
-
+    
+/*
+    // Get process Id
     int processId;
     MPI_Comm_rank(MPI_COMM_WORLD, &processId);
 
-/*
     if (processId == 0)
     {
         printf("\n\n======================== Matrix 1 ========================\n\n");
