@@ -106,6 +106,7 @@ int main(int argc, char *argv[])
     // Read arguments
     int size = atoi(*(argv + 1));
 
+    // Init MPI
     MPI_Init(&argc, &argv);
 
     // Alloc memory for matrixes
@@ -118,7 +119,7 @@ int main(int argc, char *argv[])
 
     // Multiplication
     mult(Mat1, Mat2, MatResult, size);
-    
+
 /*
     // Get process Id
     int processId;
