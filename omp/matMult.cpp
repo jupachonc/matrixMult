@@ -11,8 +11,8 @@ void generateMats(int size, int *Mat1, int *Mat2 ){
 
     for(int i = 0; i < size * size; i++){
 
-        Mat1[i] = rand() % (size * size);
-        Mat2[i] = rand() % (size * size);
+        Mat1[i] = rand() % (size);
+        Mat2[i] = rand() % (size);
 
     }
 
