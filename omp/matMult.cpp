@@ -2,10 +2,11 @@
 #include <stdlib.h>
 #include <time.h>
 #include "omp.h"
+#include <math.h>
 
 #define R_ARGS 2
 
-int threads;
+int numProcs;
 
 void generateMats(int size, int *Mat1, int *Mat2)
 {
@@ -29,13 +30,13 @@ void mult(int *Mat1, int *Mat2, int *MatResult, int size)
         int threadID = omp_get_thread_num();
 
         // Calculate partition per thread
-        int partition = (size * size) / threads;
+        int partition = ceil((double)(size * size) / numProcs);
 
         // Calculate start iteration
         int start = threadID * partition;
         
         // Calculate end iteration
-        int end = (threadID + 1) * partition;
+        int end = ((threadID + 1) * partition) < (size * size) ? ((threadID + 1) * partition)  : size * size;
 
         // Multiplication
         for (int i = start; i < end; i++)
@@ -51,7 +52,7 @@ void mult(int *Mat1, int *Mat2, int *MatResult, int size)
                 result += Mat1[(y * size) + j] * Mat2[(j * size) + x];
             }
 
-            MatResult[(y * size) + x] = result;
+            MatResult[i] = result;
         }
     }
 }
@@ -85,7 +86,7 @@ int main(int argc, char *argv[])
 
     // Read arguments
     int size = atoi(*(argv + 1));
-    threads = atoi(*(argv + 2));
+    numProcs = atoi(*(argv + 2));
 
     // Alloc memory for matrixes
     int *Mat1 = (int *)malloc(size * size * sizeof(int));
@@ -110,8 +111,7 @@ int main(int argc, char *argv[])
     printf("\n\n======================== Matrix Resultado ========================\n\n");
 
     printMatrix(MatResult, size);
-    */
-
+*/
     //Free memory
     free(Mat1);
     free(Mat2);
