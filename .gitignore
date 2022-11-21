@@ -1,2 +1,3 @@
 /omp/matMult
 /mpi/matMult
+/cuda/matMult
