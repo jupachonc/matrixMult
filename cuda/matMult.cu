@@ -214,7 +214,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    
+    /*    
     printf("\n\n======================== Matrix 1 ========================\n\n");
 
     printMatrix(h_Mat1, size);
@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
     printf("\n\n======================== Matrix Resultado ========================\n\n");
 
     printMatrix(h_MatResult, size);
-
+    */
     // Free memory
     free(h_Mat1);
     free(h_Mat2);
