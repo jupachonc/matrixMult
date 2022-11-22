@@ -52,7 +52,7 @@ __global__ void mult(int *Mat1, int *Mat2, int *MatResult, int size, int numBloc
         // Get row for shared memory
         for (int x = startColumn; x < endColumn; x++)
         {
-            row[x] = Mat1[(y * size) + x]
+            row[x] = Mat1[(y * size) + x];
         }
 
         // Sync threads to avoid race condition
@@ -65,7 +65,7 @@ __global__ void mult(int *Mat1, int *Mat2, int *MatResult, int size, int numBloc
 
             for(int i = 0; i < size; i++){
 
-                result += row[i] * Mat2[(y * size) + i]
+                result += row[i] * Mat2[(y * size) + i];
             }
 
             MatResult[(y * size) + x] = result;
@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
     }
 
     // Multiplication
-    mult<<<blocks, threads>>>(d_Mat1, d_Mat2, d_MatResult, size);
+    mult<<<blocks, threads>>>(d_Mat1, d_Mat2, d_MatResult, size, blocks, threads);
 
         err = cudaGetLastError();
 
@@ -214,20 +214,20 @@ int main(int argc, char *argv[])
     
     printf("\n\n======================== Matrix 1 ========================\n\n");
 
-    printMatrix(Mat1, size);
+    printMatrix(h_Mat1, size);
 
     printf("\n\n======================== Matrix 2 ========================\n\n");
 
-    printMatrix(Mat2, size);
+    printMatrix(h_Mat2, size);
 
     printf("\n\n======================== Matrix Resultado ========================\n\n");
 
-    printMatrix(MatResult, size);
+    printMatrix(h_MatResult, size);
 
     // Free memory
-    free(Mat1);
-    free(Mat2);
-    free(MatResult);
+    free(h_Mat1);
+    free(h_Mat2);
+    free(h_MatResult);
 
     return 0;
 }
