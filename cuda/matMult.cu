@@ -8,6 +8,7 @@
 #define R_ARGS 3
 
 int threads, blocks;
+int sizeMat = 0; 
 
 void generateMats(int size, int *Mat1, int *Mat2)
 {
@@ -52,7 +53,7 @@ __global__ void mult(int *Mat1, int *Mat2, int *MatResult, int size, int numBloc
         // Get row for shared memory
         for (int x = startColumn; x < endColumn; x++)
         {
-            row[x] = Mat1[(y * size) + x];
+            row[sizeMat] = Mat1[(y * size) + x];
         }
 
         // Sync threads to avoid race condition
