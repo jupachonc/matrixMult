@@ -44,7 +44,7 @@ __global__ void mult(int *Mat1, int *Mat2, int *MatResult, int size, int numBloc
     // Calculate end column iteration
     int endColumn = ((threadIdx.x + 1) * partitionColumn) < size ? ((threadIdx.x + 1) * partitionColumn) : size;
 
-    __shared__ int row[size];
+    //__shared__ int row[size];
 
 
     // Multiplication
