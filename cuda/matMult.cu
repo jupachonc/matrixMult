@@ -116,7 +116,7 @@ int main(int argc, char *argv[])
 
     // Allocate the device input Matrix 1
     int *d_Mat1 = NULL;
-    err = cudaMalloc((void **)&d_A, fullSize);
+    err = cudaMalloc((void **)&d_Mat1, fullSize);
 
     if (err != cudaSuccess)
     {
@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
 
     // Allocate the device input Matrix 2
     int *d_Mat2 = NULL;
-    err = cudaMalloc((void **)&d_A, fullSize);
+    err = cudaMalloc((void **)&d_Mat2, fullSize);
 
     if (err != cudaSuccess)
     {
@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
 
     // Allocate the device output Matrix Result
     int *d_MatResult = NULL;
-    err = cudaMalloc((void **)&d_A, fullSize);
+    err = cudaMalloc((void **)&d_MatResult, fullSize);
 
     if (err != cudaSuccess)
     {
