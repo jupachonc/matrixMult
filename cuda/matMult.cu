@@ -5,7 +5,6 @@
 #include <math.h>
 #include <cuda_runtime.h>
 
-
 #define R_ARGS 3
 
 int threads, blocks;
@@ -23,34 +22,55 @@ void generateMats(int size, int *Mat1, int *Mat2)
     }
 }
 
-__global__ void mult(int *Mat1, int *Mat2, int *MatResult, int size)
+__global__ void mult(int *Mat1, int *Mat2, int *MatResult, int size, int numBlocks, int numThreads)
 {
 
-    // Calculate partition per thread
-    int partition = ceil((double)(size * size) / threads);
+    // Calculate partition per block
+    int partitionRow = ceil((double)size / numBlocks);
 
-    // Calculate start iteration
-    int start = threadID * partition;
+    // Calculate start row iteration
+    int startRow = blockIdx.x * partitionRow;
 
-    // Calculate end iteration
-    int end = ((threadID + 1) * partition) < (size * size) ? ((threadID + 1) * partition) : size * size;
+    // Calculate end row iteration
+    int endRow = ((blockIdx.x + 1) * partitionRow) < size ? ((blockIdx.x + 1) * partitionRow) : size;
+
+    // Calculate partition per column
+    int partitionColumn = ceil((double)size / numThreads);
+
+    // Calculate start column iteration
+    int startColumn = threadIdx.x * partitionColumn;
+
+    // Calculate end column iteration
+    int endColumn = ((threadIdx.x + 1) * partitionColumn) < size ? ((threadIdx.x + 1) * partitionColumn) : size;
+
+    __shared__ int row[size];
+
 
     // Multiplication
-    for (int i = start; i < end; i++)
-    {
-        int x = i % size;
-        int y = (int)i / size;
-
-        int result = 0;
-
-        for (int j = 0; j < size; j++)
+    for (int y = startRow; y < endRow; y++)
+    {   
+        // Get row for shared memory
+        for (int x = startColumn; x < endColumn; x++)
         {
-
-            result += Mat1[(y * size) + j] * Mat2[(j * size) + x];
+            row[x] = Mat1[(y * size) + x]
         }
 
-        // Write result in matrix
-        MatResult[i] = result;
+        // Sync threads to avoid race condition
+        __syncthreads();
+
+        // Multiplication
+        for (int x = startColumn; x < endColumn; x++)
+        {
+            int result = 0;
+
+            for(int i = 0; i < size; i++){
+
+                result += row[i] * Mat2[(y * size) + i]
+            }
+
+            MatResult[(y * size) + x] = result;
+            
+        }
     }
 }
 
@@ -89,14 +109,14 @@ int main(int argc, char *argv[])
     threads = atoi(*(argv + 2));
 
     // Alloc memory for matrixes
-    int *h_Mat1 = (int *)malloc(size * size * sizeof(int));
-    int *h_Mat2 = (int *)malloc(size * size * sizeof(int));
-    int *h_MatResult = (int *)malloc(size * size * sizeof(int));
-
+    int fullSize = size * size * sizeof(int);
+    int *h_Mat1 = (int *)malloc(fullSize);
+    int *h_Mat2 = (int *)malloc(fullSize);
+    int *h_MatResult = (int *)malloc(fullSize);
 
     // Allocate the device input Matrix 1
     int *d_Mat1 = NULL;
-    err = cudaMalloc((void **)&d_A, size * size * sizeof(int));
+    err = cudaMalloc((void **)&d_A, fullSize);
 
     if (err != cudaSuccess)
     {
@@ -106,7 +126,7 @@ int main(int argc, char *argv[])
 
     // Allocate the device input Matrix 2
     int *d_Mat2 = NULL;
-    err = cudaMalloc((void **)&d_A, size * size * sizeof(int));
+    err = cudaMalloc((void **)&d_A, fullSize);
 
     if (err != cudaSuccess)
     {
@@ -116,7 +136,7 @@ int main(int argc, char *argv[])
 
     // Allocate the device output Matrix Result
     int *d_MatResult = NULL;
-    err = cudaMalloc((void **)&d_A, size * size * sizeof(int));
+    err = cudaMalloc((void **)&d_A, fullSize);
 
     if (err != cudaSuccess)
     {
@@ -125,11 +145,10 @@ int main(int argc, char *argv[])
     }
 
     // Generate initial matrixes
-    generateMats(size,h_Mat1, h_Mat2);
-
+    generateMats(size, h_Mat1, h_Mat2);
 
     // Copy data to device
-    err = cudaMemcpy(d_Mat1, h_Mat1, size * size * sizeof(int), cudaMemcpyHostToDevice);
+    err = cudaMemcpy(d_Mat1, h_Mat1, fullSize, cudaMemcpyHostToDevice);
 
     if (err != cudaSuccess)
     {
@@ -137,7 +156,7 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    err = cudaMemcpy(d_Mat2, h_Mat2, size * size * sizeof(int), cudaMemcpyHostToDevice);
+    err = cudaMemcpy(d_Mat2, h_Mat2, fullSize, cudaMemcpyHostToDevice);
 
     if (err != cudaSuccess)
     {
@@ -145,11 +164,54 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
-
     // Multiplication
     mult<<<blocks, threads>>>(d_Mat1, d_Mat2, d_MatResult, size);
 
-    /*
+        err = cudaGetLastError();
+
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to launch multiplication kernel (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
+    // Copy the device result matrix in device memory to the host result vector in host memory.
+
+    err = cudaMemcpy(h_MatResult, d_MatResult, fullSize, cudaMemcpyDeviceToHost);
+
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to copy vector C from device to host (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
+
+    // Free device global memory
+    err = cudaFree(d_Mat1);
+
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to free device vector A (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
+    err = cudaFree(d_Mat2);
+
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to free device vector B (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
+    err = cudaFree(d_MatResult);
+
+    if (err != cudaSuccess)
+    {
+        fprintf(stderr, "Failed to free device vector C (error code %s)!\n", cudaGetErrorString(err));
+        exit(EXIT_FAILURE);
+    }
+
+    
     printf("\n\n======================== Matrix 1 ========================\n\n");
 
     printMatrix(Mat1, size);
@@ -161,7 +223,7 @@ int main(int argc, char *argv[])
     printf("\n\n======================== Matrix Resultado ========================\n\n");
 
     printMatrix(MatResult, size);
-*/
+
     // Free memory
     free(Mat1);
     free(Mat2);
