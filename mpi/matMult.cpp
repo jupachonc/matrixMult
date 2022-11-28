@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 #include <time.h>
 #include <math.h>
 #include <mpi.h>
@@ -29,8 +30,8 @@ void mult(int *Mat1, int *Mat2, int *MatResult, int size)
     MPI_Comm_rank(MPI_COMM_WORLD, &processId);
 
     // Brodcast mat data from root node
-    MPI_Bcast(Mat1, size*size, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(Mat2, size*size, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(Mat1, size * size, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(Mat2, size * size, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Barrier(MPI_COMM_WORLD); /* IMPORTANT */
 
     // Calculate partition per thread
@@ -70,9 +71,9 @@ void mult(int *Mat1, int *Mat2, int *MatResult, int size)
     }
 
     MPI_Barrier(MPI_COMM_WORLD); /* IMPORTANT */
-    //Collect data from all process
+    // Collect data from all process
     MPI_Gather(rpMatrix, sizeArray, MPI_INT, MatResult, sizeArray, MPI_INT, 0, MPI_COMM_WORLD);
-    //Free local memory
+    // Free local memory
     free(rpMatrix);
 }
 
@@ -95,6 +96,13 @@ void printMatrix(int *Mat, int size)
 
 int main(int argc, char *argv[])
 {
+    // File for save results
+    FILE *fp;
+
+    fp = fopen("results.csv", "a");
+
+    // Time values
+    struct timeval tval_init, tval_init_mult, tval_end, tval_result_total, tval_result_mult;
 
     // Read number of arguments
     if ((argc - 1) != R_ARGS)
@@ -109,6 +117,14 @@ int main(int argc, char *argv[])
     // Init MPI
     MPI_Init(&argc, &argv);
 
+    int processId, numProcs;
+
+    MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+    MPI_Comm_rank(MPI_COMM_WORLD, &processId);
+
+    // Start time
+    gettimeofday(&tval_init, NULL);
+
     // Alloc memory for matrixes
     int *Mat1 = (int *)malloc(size * size * sizeof(int));
     int *Mat2 = (int *)malloc(size * size * sizeof(int));
@@ -117,35 +133,57 @@ int main(int argc, char *argv[])
     // Generate initial matrixes
     generateMats(size, Mat1, Mat2);
 
+    // Start time mult
+    gettimeofday(&tval_init_mult, NULL);
+
     // Multiplication
     mult(Mat1, Mat2, MatResult, size);
 
-/*
-    // Get process Id
-    int processId;
-    MPI_Comm_rank(MPI_COMM_WORLD, &processId);
+    // End time
+    gettimeofday(&tval_end, NULL);
+
+    // Calculate time
+    timersub(&tval_end, &tval_init, &tval_result_total);
+    timersub(&tval_end, &tval_init_mult, &tval_result_mult);
 
     if (processId == 0)
     {
-        printf("\n\n======================== Matrix 1 ========================\n\n");
+        printf("\n-----------------------------------------\n");
+        printf("Matrixes Size: %d\n", size);
+        printf("Processes: %d\n", numProcs);
+        printf("Total time: %ld.%06ld s \n", (long int)tval_result_total.tv_sec, (long int)tval_result_total.tv_usec);
+        printf("Multiplication time: %ld.%06ld s \n", (long int)tval_result_mult.tv_sec, (long int)tval_result_mult.tv_usec);
+        printf("\n-----------------------------------------\n");
 
-        printMatrix(Mat1, size);
-
-        printf("\n\n======================== Matrix 2 ========================\n\n");
-
-        printMatrix(Mat2, size);
-
-        printf("\n\n======================== Matrix Resultado ========================\n\n");
-
-        printMatrix(MatResult, size);
+        fprintf(fp, "%d,%d,%ld.%06ld\n", size, numProcs, (long int)tval_result_mult.tv_sec, (long int)tval_result_mult.tv_usec);
     }
-*/
+
+    /*
+        // Get process Id
+        int processId;
+        MPI_Comm_rank(MPI_COMM_WORLD, &processId);
+
+        if (processId == 0)
+        {
+            printf("\n\n======================== Matrix 1 ========================\n\n");
+
+            printMatrix(Mat1, size);
+
+            printf("\n\n======================== Matrix 2 ========================\n\n");
+
+            printMatrix(Mat2, size);
+
+            printf("\n\n======================== Matrix Resultado ========================\n\n");
+
+            printMatrix(MatResult, size);
+        }
+    */
     // Free memory
     free(Mat1);
     free(Mat2);
     free(MatResult);
 
-    //Finalize MPI
+    // Finalize MPI
     MPI_Finalize();
 
     return 0;
