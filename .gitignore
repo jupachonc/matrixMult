@@ -3,5 +3,3 @@
 /mpi/matMult
 /cuda/matMult
 /omp/results.csv
-/mpi/results.csv
-/cuda/results.csv
