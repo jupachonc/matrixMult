@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
     // Read arguments
     int size = atoi(*(argv + 1));
     blocks = atoi(*(argv + 2));
-    threads = atoi(*(argv + 2));
+    threads = atoi(*(argv + 3));
 
     // Start time
     gettimeofday(&tval_init, NULL);
