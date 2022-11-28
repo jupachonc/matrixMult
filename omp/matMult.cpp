@@ -1,8 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 #include <time.h>
 #include "omp.h"
 #include <math.h>
+#include <iostream>
+#include <fstream>
 
 #define R_ARGS 2
 
@@ -77,6 +80,13 @@ void printMatrix(int *Mat, int size)
 
 int main(int argc, char *argv[])
 {
+    // File for save results
+    FILE *fp;
+    
+    fp = fopen("results.csv", "a");
+
+    // Time values
+    struct timeval tval_init, tval_init_mult, tval_end, tval_result_total, tval_result_mult;
 
     // Read number of arguments
     if ((argc - 1) != R_ARGS)
@@ -89,6 +99,10 @@ int main(int argc, char *argv[])
     int size = atoi(*(argv + 1));
     threads = atoi(*(argv + 2));
 
+    // Start time
+    gettimeofday(&tval_init, NULL);
+
+
     // Alloc memory for matrixes
     int *Mat1 = (int *)malloc(size * size * sizeof(int));
     int *Mat2 = (int *)malloc(size * size * sizeof(int));
@@ -97,8 +111,28 @@ int main(int argc, char *argv[])
     // Generate initial matrixes
     generateMats(size, Mat1, Mat2);
 
+    // Start time mult
+    gettimeofday(&tval_init_mult, NULL);
+
     // Multiplication
     mult(Mat1, Mat2, MatResult, size);
+
+    // End time
+    gettimeofday(&tval_end, NULL);
+
+    // Calculate time
+    timersub(&tval_end, &tval_init, &tval_result_total);
+    timersub(&tval_end, &tval_init_mult, &tval_result_mult);
+
+    printf("\n-----------------------------------------\n");
+    printf("Matrixes Size: %d\n", size);
+    printf("Threads: %d\n", threads);
+    printf("Total time: %ld.%06ld s \n", (long int)tval_result_total.tv_sec, (long int)tval_result_total.tv_usec);
+    printf("Multiplication time: %ld.%06ld s \n", (long int)tval_result_mult.tv_sec, (long int)tval_result_mult.tv_usec);
+    printf("\n-----------------------------------------\n");
+
+    fprintf(fp, "%d,%d,%ld.%06ld\n", size, threads, (long int)tval_result_mult.tv_sec, (long int)tval_result_mult.tv_usec);
+
     
     /*
     printf("\n\n======================== Matrix 1 ========================\n\n");
