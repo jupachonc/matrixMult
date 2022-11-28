@@ -242,7 +242,7 @@ int main(int argc, char *argv[])
 
     printf("\n-----------------------------------------\n");
     printf("Matrixes Size: %d\n", size);
-    printf("Blocks: %d\n", threads);
+    printf("Blocks: %d\n", blocks);
     printf("Threads: %d\n", threads);
     printf("Total time: %ld.%06ld s \n", (long int)tval_result_total.tv_sec, (long int)tval_result_total.tv_usec);
     printf("Multiplication time: %ld.%06ld s \n", (long int)tval_result_mult.tv_sec, (long int)tval_result_mult.tv_usec);
