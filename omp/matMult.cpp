@@ -4,8 +4,6 @@
 #include <time.h>
 #include "omp.h"
 #include <math.h>
-#include <iostream>
-#include <fstream>
 
 #define R_ARGS 2
 

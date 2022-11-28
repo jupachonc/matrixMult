@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 #include <time.h>
 #include "omp.h"
 #include <math.h>
@@ -96,6 +97,15 @@ void printMatrix(int *Mat, int size)
 
 int main(int argc, char *argv[])
 {
+
+    // File for save results
+    FILE *fp;
+    
+    fp = fopen("results.csv", "a");
+
+    // Time values
+    struct timeval tval_init, tval_init_mult, tval_end, tval_result_total, tval_result_mult;
+
     // Error code to check return values for CUDA calls
     cudaError_t err = cudaSuccess;
 
@@ -110,6 +120,10 @@ int main(int argc, char *argv[])
     int size = atoi(*(argv + 1));
     blocks = atoi(*(argv + 2));
     threads = atoi(*(argv + 2));
+
+    // Start time
+    gettimeofday(&tval_init, NULL);
+
 
     // Alloc memory for matrixes
     int fullSize = size * size * sizeof(int);
@@ -167,6 +181,9 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
+    // Start time mult
+    gettimeofday(&tval_init_mult, NULL);
+
     // Multiplication
     mult<<<blocks, threads>>>(d_Mat1, d_Mat2, d_MatResult, size, blocks, threads);
 
@@ -184,9 +201,14 @@ int main(int argc, char *argv[])
 
     if (err != cudaSuccess)
     {
-        fprintf(stderr, "Failed to copy vector C from device to host (error code %s)!\n", cudaGetErrorString(err));
+        fprintf(stderr, "Failed to copy result from device to host (error code %s)!\n", cudaGetErrorString(err));
         exit(EXIT_FAILURE);
     }
+
+
+    // End time
+    gettimeofday(&tval_end, NULL);
+
 
 
     // Free device global memory
@@ -194,7 +216,7 @@ int main(int argc, char *argv[])
 
     if (err != cudaSuccess)
     {
-        fprintf(stderr, "Failed to free device vector A (error code %s)!\n", cudaGetErrorString(err));
+        fprintf(stderr, "Failed to free device mat1 (error code %s)!\n", cudaGetErrorString(err));
         exit(EXIT_FAILURE);
     }
 
@@ -202,7 +224,7 @@ int main(int argc, char *argv[])
 
     if (err != cudaSuccess)
     {
-        fprintf(stderr, "Failed to free device vector B (error code %s)!\n", cudaGetErrorString(err));
+        fprintf(stderr, "Failed to free device mat2 (error code %s)!\n", cudaGetErrorString(err));
         exit(EXIT_FAILURE);
     }
 
@@ -210,9 +232,24 @@ int main(int argc, char *argv[])
 
     if (err != cudaSuccess)
     {
-        fprintf(stderr, "Failed to free device vector C (error code %s)!\n", cudaGetErrorString(err));
+        fprintf(stderr, "Failed to free device result (error code %s)!\n", cudaGetErrorString(err));
         exit(EXIT_FAILURE);
     }
+
+    // Calculate time
+    timersub(&tval_end, &tval_init, &tval_result_total);
+    timersub(&tval_end, &tval_init_mult, &tval_result_mult);
+
+    printf("\n-----------------------------------------\n");
+    printf("Matrixes Size: %d\n", size);
+    printf("Blocks: %d\n", threads);
+    printf("Threads: %d\n", threads);
+    printf("Total time: %ld.%06ld s \n", (long int)tval_result_total.tv_sec, (long int)tval_result_total.tv_usec);
+    printf("Multiplication time: %ld.%06ld s \n", (long int)tval_result_mult.tv_sec, (long int)tval_result_mult.tv_usec);
+    printf("\n-----------------------------------------\n");
+
+    fprintf(fp, "%d,%d,%d,%ld.%06ld\n", size, blocks, threads, (long int)tval_result_mult.tv_sec, (long int)tval_result_mult.tv_usec);
+
 
     /*    
     printf("\n\n======================== Matrix 1 ========================\n\n");
